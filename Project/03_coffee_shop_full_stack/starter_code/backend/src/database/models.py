@@ -126,3 +126,9 @@ class Drink(db.Model):
 
     def __repr__(self):
         return json.dumps(self.short())
+    def format(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'recipe':self.recipe
+            }
