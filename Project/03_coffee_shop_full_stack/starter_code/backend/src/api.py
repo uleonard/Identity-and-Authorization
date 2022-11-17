@@ -45,9 +45,13 @@ db_drop_and_create_all()
 @app.route("/drinks/",endpoint='drinks')
 @requires_auth('get:drinks')
 def drinks(payload):
-    drinks = db.session.query(Drink)
-    drinks = [drink.short() for drink in drinks]
-        
+    
+    try:
+        drinks = db.session.query(Drink)
+        drinks = [drink.short() for drink in drinks]
+    except:
+        abort(404)   
+
     if len(drinks) == 0:
         abort(404)
 
@@ -71,9 +75,12 @@ def drinks(payload):
 @app.route("/drinks-detail/", endpoint='drinks_detail')
 @requires_auth('get:drinks-detail')
 def drinks_detail(payload):
-    drinks = db.session.query(Drink)
-    drinks = [drink.long() for drink in drinks]      
-    
+    try:
+        drinks = db.session.query(Drink)
+        drinks = [drink.long() for drink in drinks]      
+    except:
+        abort(404)
+
     if len(drinks) == 0:
         abort(404)
 
@@ -97,12 +104,18 @@ def drinks_detail(payload):
 @app.route("/drinks/",endpoint='post_drink', methods=["POST"])
 @requires_auth('post:drinks')
 def post_drink(payload):
-    data = request.json
-    drink = Drink(title=data['title'], recipe=json.dumps(data['recipe']))
-    drink.insert()
+    try:
+        #data = request.json
+        data = request.get_json()
+        #drink = Drink(title=data['title'], recipe=json.dumps(data['recipe']))
+        drink = Drink(title=data.get("title", None), recipe=json.dumps(data.get("recipe", None)))
 
-    drink = [drink.long()]
-  
+        drink.insert()
+
+        drink = [drink.long()]
+    except:
+        abort(404)
+
     return jsonify({"success": True, "drinks": drink})
 
 
@@ -119,14 +132,17 @@ def post_drink(payload):
 '''
 @app.route("/drinks/<id>",endpoint='update_drink', methods=["PATCH"])
 @requires_auth('patch:drinks')
-def delete_drink(payload,id=None):
-    data = request.json
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
-    drink.title = data['title']
-    drink.update()
+def update_drink(payload,id=None):
+    try:
+        data = request.json
+        drink = Drink.query.filter(Drink.id == id).one_or_none()
+        drink.title = data['title']
+        drink.update()
 
-    drink = [drink.long()]
-  
+        drink = [drink.long()]
+    except:
+        abort(404)
+
     return jsonify({"success": True, "drinks": drink})
 
 
@@ -143,10 +159,11 @@ def delete_drink(payload,id=None):
 @app.route("/drinks/<id>",endpoint='delete_drink', methods=["DELETE"])
 @requires_auth('delete:drinks')
 def delete_drink(payload,id=None):
-    data = request.json
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
-    drink.delete()
-
+    try:
+        drink = Drink.query.filter(Drink.id == id).one_or_none()
+        drink.delete()
+    except:
+        abort(404)
     #drink = [drink.long()]
   
     return jsonify({"success": True, "delete": drink.id})
@@ -162,9 +179,9 @@ Example error handling for unprocessable entity
 def unauthourized(error):
     return jsonify({
         "success": False, 
-        "error": 401,
+        "error": 403,
         "message": "unauthorized"
-        }), 401
+        }), 403
 
 @app.errorhandler(403)
 def unauth(error):
